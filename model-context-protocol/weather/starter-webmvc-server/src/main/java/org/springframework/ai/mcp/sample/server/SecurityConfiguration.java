@@ -35,12 +35,12 @@ import org.springframework.security.oauth2.server.authorization.client.InMemoryR
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import static org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer.authorizationServer;
 
 @Configuration
 @EnableWebSecurity
@@ -75,10 +75,8 @@ class SecurityConfiguration {
 	@Bean
 	@Order(2)
 	SecurityFilterChain authServerFilterChain(HttpSecurity http) throws Exception {
-		OAuth2AuthorizationServerConfigurer authServerConfig = new OAuth2AuthorizationServerConfigurer();
-
 		return http.authorizeHttpRequests(req -> req.anyRequest().authenticated())
-			.with(authServerConfig, Customizer.withDefaults())
+			.with(authorizationServer(), Customizer.withDefaults())
 			.formLogin(Customizer.withDefaults())
 			.cors(Customizer.withDefaults())
 			.build();
@@ -89,7 +87,7 @@ class SecurityConfiguration {
 	 * tokens.
 	 */
 	@Bean
-	public RegisteredClientRepository registeredClientRepository() {
+	RegisteredClientRepository registeredClientRepository() {
 		RegisteredClient oidcClient = RegisteredClient.withId(UUID.randomUUID().toString())
 			.clientId("oidc-client")
 			.clientSecret("{noop}secret")
@@ -109,7 +107,7 @@ class SecurityConfiguration {
 	 * Used by the Resource Server to parse and validate JWT tokens.
 	 */
 	@Bean
-	public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
+	JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
 		return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
 	}
 
@@ -136,7 +134,7 @@ class SecurityConfiguration {
 	 * app, as it makes calls from the front-end.
 	 */
 	@Bean
-	public CorsConfigurationSource corsConfigurationSource() {
+	CorsConfigurationSource corsConfigurationSource() {
 		var configurationSource = new UrlBasedCorsConfigurationSource();
 		var configuration = new CorsConfiguration();
 		configuration.addAllowedOriginPattern("http://localhost:*/");
